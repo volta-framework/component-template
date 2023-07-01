@@ -83,8 +83,7 @@ classDiagram
         +__toString():string
         +addSubTemplate(string index, string file, array placeholders=[]):self
         +get(string key, mixed default=NULL):mixed
-        +getContent(array placeholders=[]):string
-        +getContentAsStream(array placeholders=[]):Psr\Http\Message\StreamInterface
+        +getContent(array placeholders=[]):string      
         +getFile():string
         +getParent():?Quadro\Templates\Template
         +getPlaceholders():array
