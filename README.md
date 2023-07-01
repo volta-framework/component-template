@@ -101,12 +101,7 @@ classDiagram
         +setFile(string file):self
         +setPlaceholders(array placeholders):self
     }
-    Volta_Component_Templates_Template *-- Volta_Component_Templates_Template : #_parent=NULL
-    class Psr_Http_Message_StreamInterface {
-         	&lt;&lt;interface&gt;&gt;
-    }
-    Stringable..|>Psr_Http_Message_StreamInterface
-    Volta_Component_Templates_Template --> Psr_Http_Message_StreamInterface : +getContentAsStream()
+    Volta_Component_Templates_Template *-- Volta_Component_Templates_Template : #_parent=NULL 
     Volta_Component_Templates_Template --> Volta_Component_Templates_Template : +getParent()
     class Volta_Component_Templates_TemplateInterface {
          	&lt;&lt;interface&gt;&gt;
@@ -178,7 +173,6 @@ Generated @  20230619 13:50:50
 &nbsp;&nbsp; *NOTE: The passed placeholders will be merged with the ones passed at construction and overwrites*\
 &nbsp;&nbsp; *existing placeholders. If we have a parent placeholders will also be extracted but overwritten by*\
 &nbsp;&nbsp; *the current placeholders list*
-- public function **[getContentAsStream](#)(array placeholders=[])**: Psr\Http\Message\StreamInterface
 - public function **[getFile](#)()**: string
 - public function **[getParent](#)()**: ?Quadro\Templates\Template\
 &rdsh; *Getter*\
