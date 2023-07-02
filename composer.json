@@ -18,7 +18,7 @@
     },
 
     "autoload": {
-        "psr-4": { "Volta\\Component\\Template\\": "src/Volta/Component/Template/" }
+        "psr-4": { "Volta\\Component\\Templates\\": "src/Volta/Component/Templates/" }
     }
 
 
