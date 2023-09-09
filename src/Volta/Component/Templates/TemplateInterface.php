@@ -2,7 +2,7 @@
 /*
  * This file is part of the Volta package.
  *
- * (c) Rob Demmenie <rob@volta-framework.com>
+ * (c) Rob Demmenie <rob@volta-server-framework.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -30,19 +30,6 @@ interface TemplateInterface
     #endregion
 
     #region - Files related methods:
-
-    /**
-     * @return array<string> The directory the templates are loaded from
-     */
-    public static function getBaseDir(): array;
-
-    /**
-     * Sets the directory the templates are loaded from
-     *
-     * @param string|array<string> $baseDir
-     * @return void
-     */
-    public static function setBaseDir(string|array $baseDir): void;
 
     /**
      * @return string The file containing the PHP and HTML

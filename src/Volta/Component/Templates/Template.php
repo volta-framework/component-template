@@ -2,7 +2,7 @@
 /*
  * This file is part of the Volta package.
  *
- * (c) Rob Demmenie <rob@volta-framework.com>
+ * (c) Rob Demmenie <rob@volta-server-framework.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -32,52 +32,16 @@ class Template implements TemplateInterface, ArrayAccess
      * @param array<string, mixed> $placeholders Associative array with values to be replaced
      * @throws NotFoundException Thrown when the file is not found
      */
-    public function __construct(string $file, array $placeholders = [])
-    {
-        $this->setFile($file);
-        $this->_placeholders = $placeholders;
-    }
+     public function __construct(string $file, array $placeholders = [])
+     {
+         $this->setFile($file);
+         $this->_placeholders = $placeholders;
+     }
 
-   #endregion
+    #endregion
 
     #region - Files related methods:
 
-    /**
-     * @var array<string> internal storage of base directory
-     * @ignore Do not show up in generated documentation
-     */
-    private static array $_baseDir = [];
-
-    /**
-     * @return array<string> The directory the templates are loaded from
-     */
-    public static function getBaseDir(): array
-    {
-        return self::$_baseDir;
-    }
-
-    /**
-     * Sets the directory the templates are loaded from
-     * @param string|array<string> $baseDir
-     * @return void
-     * @throws NotFoundException
-     */
-    public static function setBaseDir(string|array $baseDir): void
-    {
-        if(!is_array($baseDir)) {
-            $baseDir = (array) $baseDir;
-        }
-        foreach($baseDir as $dir) {
-            $dir = realpath($dir);
-            if($dir === false || !is_dir($dir)) {
-                throw new NotFoundException(sprintf('Template directory "%s" not found!', $dir));
-            }
-            $dir .= '/';
-            if(in_array($dir , self::$_baseDir)) continue;
-            self::$_baseDir[] = $dir;
-        }
-
-    }
 
     /**
      * @var string internal storage of existing template file
@@ -86,6 +50,8 @@ class Template implements TemplateInterface, ArrayAccess
     private string $_file;
 
     /**
+     * Returns the template location
+     *
      * @return string
      */
     public function getFile(): string
@@ -94,13 +60,15 @@ class Template implements TemplateInterface, ArrayAccess
     }
 
     /**
+     * Sets the template location
+     *
      * @param string $file
      * @return $this
      * @throws \Volta\Component\Templates\NotFoundException
      */
     public function setFile(string $file): self
     {
-        foreach(self::getBaseDir() as $dir) {
+        foreach(Settings::getBaseDirectories() as $dir) {
             if(file_exists($dir . $file)) {
                 $this->_file = $dir . $file;
                 break;
@@ -431,6 +399,7 @@ class Template implements TemplateInterface, ArrayAccess
     /**
      * @inheritdoc
      * @see https://www.php.net/manual/en/arrayaccess.offsetUnset.php
+     * @throws TemplatesException
      */
     public function offsetUnset(mixed $offset): void
     {
