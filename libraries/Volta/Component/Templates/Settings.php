@@ -20,14 +20,14 @@ class Settings
      * @var array<string> internal storage of base directories
      * @ignore Do not show up in generated documentation
      */
-    private static array $_baseDirectories = [];
+    private static array $baseDirectories = [];
 
     /**
      * @return array<string> The directory the templates are loaded from
      */
     public static function getBaseDirectories(): array
     {
-        return Settings::$_baseDirectories;
+        return Settings::$baseDirectories;
     }
 
     /**
@@ -51,10 +51,10 @@ class Settings
             $realBaseDirectory .= DIRECTORY_SEPARATOR;
 
             // do not allow doubles
-            if(in_array($realBaseDirectory , Settings::$_baseDirectories)) continue;
+            if(in_array($realBaseDirectory , Settings::$baseDirectories)) continue;
 
             // finally add to the list
-            Settings::$_baseDirectories[$index] = $realBaseDirectory;
+            Settings::$baseDirectories[$index] = $realBaseDirectory;
         }
     }
 }

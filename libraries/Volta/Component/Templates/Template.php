@@ -35,7 +35,7 @@ class Template implements TemplateInterface, ArrayAccess
      public function __construct(string $file, array $placeholders = [])
      {
          $this->setFile($file);
-         $this->_placeholders = $placeholders;
+         $this->placeholders = $placeholders;
      }
 
     #endregion
@@ -87,7 +87,7 @@ class Template implements TemplateInterface, ArrayAccess
      * @var Template|null  internal reference to parent template
      * @ignore Do not show up in generated documentation
      */
-    protected ?Template $_parent = null;
+    protected ?Template $parent = null;
 
     /**
      * Getter
@@ -99,14 +99,14 @@ class Template implements TemplateInterface, ArrayAccess
      */
     public function getParent(): ?Template
     {
-        return $this->_parent;
+        return $this->parent;
     }
 
     /**
      * @var Template[]  internal list with references to its sub templates
      * @ignore Do not show up in generated documentation
      */
-    protected array $_subTemplates = [];
+    protected array $subTemplates = [];
 
     /**
      * Getter
@@ -118,7 +118,7 @@ class Template implements TemplateInterface, ArrayAccess
      */
     public function getSubTemplates(): array
     {
-        return $this->_subTemplates;
+        return $this->subTemplates;
     }
 
     /**
@@ -131,8 +131,8 @@ class Template implements TemplateInterface, ArrayAccess
     public function addSubTemplate(string $index, string $file, array $placeholders = [] ): self
     {
         $template = new Template($file, $placeholders);
-        $template->_parent = $this;
-        $this->_subTemplates[$index] = $template;
+        $template->parent = $this;
+        $this->subTemplates[$index] = $template;
         return $template;
     }
 
@@ -146,7 +146,7 @@ class Template implements TemplateInterface, ArrayAccess
         if(!$this->hasSubTemplate($index)) {
             throw new NotFoundException(sprintf('SubTemplate "%s" not found', $index));
         }
-        return $this->_subTemplates[$index];
+        return $this->subTemplates[$index];
     }
 
     /**
@@ -155,7 +155,7 @@ class Template implements TemplateInterface, ArrayAccess
      */
     public function hasSubTemplate(string|int $index): bool
     {
-        return array_key_exists($index, $this->_subTemplates);
+        return array_key_exists($index, $this->subTemplates);
     }
 
     /**
@@ -178,14 +178,14 @@ class Template implements TemplateInterface, ArrayAccess
      * @var array<string, mixed> Internal storage for the list of name - value pairs to be replaced in the template
      * @ignore Do not show up in generated documentation
      */
-    private array $_placeholders = [];
+    private array $placeholders = [];
 
     /**
      * @return array<string, mixed> The list of name - value pairs to be replaced in the template
      */
     public function getPlaceholders(): array
     {
-        return $this->_placeholders;
+        return $this->placeholders;
     }
 
     /**
@@ -194,7 +194,7 @@ class Template implements TemplateInterface, ArrayAccess
      */
     public function setPlaceholders(array $placeholders): self
     {
-        $this->_placeholders = $placeholders;
+        $this->placeholders = $placeholders;
         return $this;
     }
 
@@ -216,7 +216,7 @@ class Template implements TemplateInterface, ArrayAccess
                 return $default;
             }
         }
-        return $this->_placeholders[$key];
+        return $this->placeholders[$key];
     }
 
     /**
@@ -226,7 +226,7 @@ class Template implements TemplateInterface, ArrayAccess
      */
     public function set(string $key, mixed $value): self
     {
-        $this->_placeholders[$key] = $value;
+        $this->placeholders[$key] = $value;
         return $this;
     }
 
@@ -236,7 +236,7 @@ class Template implements TemplateInterface, ArrayAccess
      */
     public function has(string $key): bool
     {
-        return isset($this->_placeholders[$key]);
+        return isset($this->placeholders[$key]);
     }
 
     #endregion
@@ -279,7 +279,7 @@ class Template implements TemplateInterface, ArrayAccess
     /**
      * @var array<string, mixed>
      */
-    protected array $_placeholdersOrg = [];
+    protected array $placeholdersOrg = [];
 
     /**
      * Renders the template, substitutes the __$placeholders__ and returns the result
@@ -303,7 +303,7 @@ class Template implements TemplateInterface, ArrayAccess
         }
 
         // override / merge with current placeholders already set
-        $currentPlaceholders = array_merge($currentPlaceholders, $this->_placeholders);
+        $currentPlaceholders = array_merge($currentPlaceholders, $this->placeholders);
 
         // override / merge placeholders with passed placeholders
         $currentPlaceholders = array_merge($currentPlaceholders, $placeholders);
@@ -313,8 +313,8 @@ class Template implements TemplateInterface, ArrayAccess
 
         // save original placeholders this way we can render the template multiple times with different values
         // keeping the original values intact and still use the get() method in the templates.
-        $this->_placeholdersOrg = $this->_placeholders;
-        $this->_placeholders = $currentPlaceholders;
+        $this->placeholdersOrg = $this->placeholders;
+        $this->placeholders = $currentPlaceholders;
 
         // return value defaults to empty string;
         $html = '';
@@ -331,7 +331,8 @@ class Template implements TemplateInterface, ArrayAccess
                         sprintf(
                             'Error %d in template(%s): "%s" on line %d',
                             $errno,
-                            basename($this->getFile()),
+                             $this->getFile()
+                            ,
                             $errstr,
                             $errline
                         )
@@ -350,7 +351,7 @@ class Template implements TemplateInterface, ArrayAccess
 
         // restore error handler and placeholders
         restore_error_handler();
-        $this->_placeholders = $this->_placeholdersOrg;
+        $this->placeholders = $this->placeholdersOrg;
 
         return (string) $html;
 
