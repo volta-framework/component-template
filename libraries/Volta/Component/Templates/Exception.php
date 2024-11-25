@@ -11,9 +11,7 @@ declare(strict_types=1);
 
 namespace Volta\Component\Templates;
 
-use \Exception as BaseException;
-
-class Exception extends BaseException
+class Exception extends \Exception
 {
 
-} // class
+}

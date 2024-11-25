@@ -27,18 +27,22 @@ interface TemplateInterface
      */
     public function __construct(string $file, array $placeholders = []);
 
+
     #endregion
 
     #region - Files related methods:
+
 
     /**
      * @return string The file containing the PHP and HTML
      */
     public function getFile(): string;
 
+
     #endregion
 
     #region - Nested Templates:
+
 
     /**
      * @see Template::addSubTemplate()
@@ -62,7 +66,7 @@ interface TemplateInterface
     public function addSubTemplate(string $index, string $file, array $placeholders = [] ): self;
 
     /**
-     * @param string $index A (unique within the parent) name for this templateA (unique within the parent) name for this template
+     * @param string $index A (unique within the parent) name for this template
      * @return Template Reference to the sub template instance
      * @throws NotFoundException When the sub tem[plate can not be found
      */
@@ -83,9 +87,11 @@ interface TemplateInterface
      */
     public function include(string $file, array $placeholders = []) : void;
 
+
     #endregion:
 
     #region - Placeholders related methods:
+
 
     /**
      * @return array<string, mixed> The collection of name - value pairs to be replaced in the template
@@ -116,9 +122,11 @@ interface TemplateInterface
      */
     public function has(string $key): bool;
 
+
     #endregion
 
     #region - Render related methods:
+
 
     /**
      * Renders the __$file__, substitutes the __$placeholders__ and returns the result
@@ -142,6 +150,7 @@ interface TemplateInterface
      * @return string The rendered HTML
      */
     public function getContent(array $placeholders = []): string;
+
 
     #endregion
 

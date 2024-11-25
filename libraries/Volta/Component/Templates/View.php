@@ -10,15 +10,15 @@
 declare(strict_types=1);
 namespace Volta\Component\Templates;
 
-use Volta\Component\Templates\Template;
+use Volta\Component\Templates\Template as BaseTemplate;
 
 /**
  * Combines a layout and content templates
  */
-class View extends Template
+class View extends BaseTemplate
 {
 
-    public function __construct(string $layout,array $placeholders = [])
+    public function __construct(string $layout, array $placeholders = [])
     {
         parent::__construct($layout, $placeholders);
     }

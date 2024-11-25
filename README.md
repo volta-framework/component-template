@@ -14,7 +14,7 @@ classDiagram
     class Throwable {
          	&lt;&lt;interface&gt;&gt;
     }
-    Stringable..|>Throwable
+    StringAble..|>Throwable
     Throwable..|>Exception
     class Volta_Component_Templates_NotFoundException
     Volta_Component_Templates_Exception<|--Volta_Component_Templates_NotFoundException

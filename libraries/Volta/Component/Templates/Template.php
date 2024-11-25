@@ -29,7 +29,7 @@ class Template implements TemplateInterface, ArrayAccess
 
     /**
      * @param string $file The file containing the PHP and HTML
-     * @param array<string, mixed> $placeholders Associative array with values to be replaced
+     * @param array<string, mixed> $placeholders Associative array with key - value pairs to be replaced
      * @throws NotFoundException Thrown when the file is not found
      */
      public function __construct(string $file, array $placeholders = [])
@@ -47,7 +47,7 @@ class Template implements TemplateInterface, ArrayAccess
      * @var string internal storage of existing template file
      * @ignore Do not show up in generated documentation
      */
-    private string $_file;
+    private string $file;
 
     /**
      * Returns the template location
@@ -56,7 +56,7 @@ class Template implements TemplateInterface, ArrayAccess
      */
     public function getFile(): string
     {
-        return $this->_file;
+        return $this->file;
     }
 
     /**
@@ -70,11 +70,11 @@ class Template implements TemplateInterface, ArrayAccess
     {
         foreach(Settings::getBaseDirectories() as $dir) {
             if(file_exists($dir . $file)) {
-                $this->_file = $dir . $file;
+                $this->file = $dir . $file;
                 break;
             }
         }
-        if(!isset($this->_file)){
+        if(!isset($this->file)){
             throw new NotFoundException(sprintf('Template "%s" not found!', $file));
         }
         return $this;
@@ -82,6 +82,17 @@ class Template implements TemplateInterface, ArrayAccess
     #endregion
 
     #region - Nested Templates:
+
+    private bool $verbose = false;
+    public function getVerbose(): bool
+    {
+        return $this->verbose;
+    }
+    public function setVerbose(bool $verbose): self
+    {
+        $this->verbose = $verbose;
+        return $this;
+    }
 
     /**
      * @var Template|null  internal reference to parent template
@@ -308,54 +319,51 @@ class Template implements TemplateInterface, ArrayAccess
         // override / merge placeholders with passed placeholders
         $currentPlaceholders = array_merge($currentPlaceholders, $placeholders);
 
-        // extract current placeholders
-        $nr = extract($currentPlaceholders);
+//        $currentPlaceholders = array_merge(
+//            !is_null($this->getParent()) ? $this->getParent()->getPlaceholders() : [],
+//            $this->placeholders,
+//            $placeholders
+//        );
 
         // save original placeholders this way we can render the template multiple times with different values
         // keeping the original values intact and still use the get() method in the templates.
         $this->placeholdersOrg = $this->placeholders;
         $this->placeholders = $currentPlaceholders;
 
-        // return value defaults to empty string;
-        $html = '';
-
         // temporary get all errors to give some meaningfully template related feedback
         set_error_handler(
-            /**
-             * @throws TemplatesException
-             */
-            function(int $errno, string $errstr, string $errfile, int $errline)
+            function(int $code, string $message, string $file, int $line)
             {
                 if (error_reporting() > 0 ) {
                     throw new TemplatesException(
-                        sprintf(
-                            'Error %d in template(%s): "%s" on line %d',
-                            $errno,
-                             $this->getFile()
-                            ,
-                            $errstr,
-                            $errline
-                        )
+                        sprintf('Error %d in template(%s): "%s" on line %d', $code, $this->getFile(), $message, $line )
                     );
                 } else {
                     return false;
                 }
             }
         );
+
+        $html = '';
         ob_start();
-        echo PHP_EOL . '<!-- START: "' . basename($this->getFile()) . '" -->' . PHP_EOL;
+        extract($currentPlaceholders);
+        if ($this->getVerbose()) $html .= PHP_EOL . '<!-- START: "' . basename($this->getFile()) . '" -->' . PHP_EOL;
         include $this->getFile();
-        $html = ob_get_contents();
-        $html .= PHP_EOL . '<!-- END: "' . basename($this->getFile()) . '" -->' . PHP_EOL;
+        $html .= ob_get_contents() . PHP_EOL;
+        if ($this->getVerbose()) $html .= PHP_EOL . '<!-- END: "' . basename($this->getFile()) . '" -->' . PHP_EOL;
         ob_end_clean();
 
-        // restore error handler and placeholders
         restore_error_handler();
         $this->placeholders = $this->placeholdersOrg;
 
-        return (string) $html;
+        return $html;
 
-    } // GetContent
+    }
+
+    private function getContentPlaceholders(): void
+    {
+
+    }
 
     /**
      * @return string
@@ -410,4 +418,4 @@ class Template implements TemplateInterface, ArrayAccess
     #endregion
 
 
-} // class
+}
