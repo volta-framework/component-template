@@ -16,57 +16,58 @@ use ArrayAccess;
 use Volta\Component\Templates\NotFoundException as NotFoundException;
 use Volta\Component\Templates\Exception as TemplatesException;
 
-
-/**
- * Includes a PHP template file but in a local scope.
- *
- * @implements ArrayAccess<string, mixed>
- */
 class Template implements TemplateInterface, ArrayAccess
 {
 
-    #region - Constructor related methods:
+    #region - Construction:
+
+
+    private string $file;
+
+    protected string $name;
+
+    private bool $verbose = false;
+
+    private null|TemplateInterface $parent = null;
+
+    /** @var array<string, mixed> */
+    private array $placeholders = [];
+
+    /** @var TemplateInterface[] */
+    protected array $children= [];
+
 
     /**
-     * @param string $file The file containing the PHP and HTML
-     * @param array<string, mixed> $placeholders Associative array with key - value pairs to be replaced
-     * @throws NotFoundException Thrown when the file is not found
+     * @inheritDoc
      */
      public function __construct(string $file, array $placeholders = [])
      {
          $this->setFile($file);
+         $this->name = substr(basename($file), 0  , strpos(basename($file), '.'));
          $this->placeholders = $placeholders;
      }
 
-    #endregion
-
-    #region - Files related methods:
-
-
-    /**
-     * @var string internal storage of existing template file
-     * @ignore Do not show up in generated documentation
-     */
-    private string $file;
-
-    /**
-     * Returns the template location
-     *
-     * @return string
-     */
+    /** @inheritDoc */
     public function getFile(): string
     {
         return $this->file;
     }
 
+    /** @inheritDoc */
+    public function getName(): string
+    {
+        if ($this->hasParent())  {
+            return $this->getParent()->getName() . '/' . $this->name;
+        }
+        return $this->name;
+    }
+
     /**
-     * Sets the template location
-     *
      * @param string $file
      * @return $this
      * @throws \Volta\Component\Templates\NotFoundException
      */
-    public function setFile(string $file): self
+    protected function setFile(string $file): self
     {
         foreach(Settings::getBaseDirectories() as $dir) {
             if(file_exists($dir . $file)) {
@@ -75,212 +76,212 @@ class Template implements TemplateInterface, ArrayAccess
             }
         }
         if(!isset($this->file)){
-            throw new NotFoundException(sprintf('Template "%s" not found!', $file));
+            throw new NotFoundException(sprintf('File "%s" not found!', $file));
         }
         return $this;
     }
-    #endregion
 
-    #region - Nested Templates:
-
-    private bool $verbose = false;
+    /** @inheritDoc */
     public function getVerbose(): bool
     {
         return $this->verbose;
     }
+
+    /** @inheritDoc */
     public function setVerbose(bool $verbose): self
     {
         $this->verbose = $verbose;
         return $this;
     }
 
-    /**
-     * @var Template|null  internal reference to parent template
-     * @ignore Do not show up in generated documentation
-     */
-    protected ?Template $parent = null;
+    #endregion
+    #region - Nested Templates:
 
-    /**
-     * Getter
-     *
-     * Will be set when this template is included through the
-     * Template::include() method. Defaults to null
-     *
-     * @return Template|null Reference to parent template
-     */
-    public function getParent(): ?Template
+
+    /** @inheritDoc */
+    public function getParent(): TemplateInterface|null
     {
         return $this->parent;
     }
 
-    /**
-     * @var Template[]  internal list with references to its sub templates
-     * @ignore Do not show up in generated documentation
-     */
-    protected array $subTemplates = [];
-
-    /**
-     * Getter
-     *
-     * Will be filled when templates are included through the
-     * Template::include() method.
-     *
-     * @return Template[] List with references to its child templates
-     */
-    public function getSubTemplates(): array
+    /** @inheritDoc */
+    public function hasParent(): bool
     {
-        return $this->subTemplates;
+        return !is_null($this->parent);
     }
 
-    /**
-     * @param string $file
-     * @param array<string, mixed> $placeholders
-     * @param string $index
-     * @return Template
-     * @throws NotFoundException
-     */
-    public function addSubTemplate(string $index, string $file, array $placeholders = [] ): self
+    /** @inheritDoc */
+    public function isRoot(): bool
     {
-        $template = new Template($file, $placeholders);
-        $template->parent = $this;
-        $this->subTemplates[$index] = $template;
-        return $template;
+        return !$this->hasParent();
     }
 
-    /**
-     * @param string|int $index
-     * @return Template
-     * @throws NotFoundException
-     */
-    public function getSubTemplate(string|int $index): self
+    /** @inheritDoc */
+    public function getChildren(): array
     {
-        if(!$this->hasSubTemplate($index)) {
-            throw new NotFoundException(sprintf('SubTemplate "%s" not found', $index));
+        return $this->children;
+    }
+
+    /** @inheritDoc */
+    public function addChild(string $templateName, TemplateInterface $template): self
+    {
+        if(isset($this->children[$templateName])){
+            throw new TemplatesException(sprintf('Template "%s" already exists!', $templateName));
         }
-        return $this->subTemplates[$index];
-    }
-
-    /**
-     * @param string|int $index
-     * @return bool
-     */
-    public function hasSubTemplate(string|int $index): bool
-    {
-        return array_key_exists($index, $this->subTemplates);
-    }
-
-    /**
-     * Includes a independent template
-     *
-     * @param string $file
-     * @param array<string, mixed> $placeholders
-     * @throws NotFoundException
-     */
-    public function include(string $file, array $placeholders = []) : void
-    {
-        echo new Template($file, $placeholders);
-    }
-
-    #endregion:
-
-    #region - Placeholders related methods:
-
-    /**
-     * @var array<string, mixed> Internal storage for the list of name - value pairs to be replaced in the template
-     * @ignore Do not show up in generated documentation
-     */
-    private array $placeholders = [];
-
-    /**
-     * @return array<string, mixed> The list of name - value pairs to be replaced in the template
-     */
-    public function getPlaceholders(): array
-    {
-        return $this->placeholders;
-    }
-
-    /**
-     * @param array<string, mixed> $placeholders
-     * @return self
-     */
-    public function setPlaceholders(array $placeholders): self
-    {
-        $this->placeholders = $placeholders;
+        $template->parent = $this;
+        $template->name = $templateName;
+        $template->setVerbose($this->verbose);
+        $this->children[$templateName] = $template;
         return $this;
     }
 
-    /**
-     * Checks if there is a placeholder with the name __$key__ and returns it
-     * if not checks the default value __$default__ provided to be returned.
-     * if no default value return 'NO VALUE FOR  "' .$key . '"'
-     *
-     * @param string $key
-     * @param mixed $default
-     * @return mixed
-     */
+    /** @inheritDoc */
+    public function addChildByFile(string $templateName, string $file, array $placeholders=[]): self
+    {
+        $template = new Template($file, $placeholders);
+        $this->addChild($templateName, $template);
+        return $this;
+    }
+
+    /** @inheritDoc */
+    public function getChild(string $templateName): TemplateInterface
+    {
+        if(!$this->hasChild($templateName)) {
+            throw new NotFoundException(sprintf('Child Template "%s" not found', $templateName));
+        }
+        return $this->children[$templateName];
+    }
+
+    /** @inheritDoc */
+    public function hasChild(string $templateName): bool
+    {
+        return array_key_exists($templateName, $this->children);
+    }
+
+    /** @inheritDoc */
+    public function removeChild(string $templateName): self
+    {
+        if(!$this->hasChild($templateName)) {
+            throw new NotFoundException(sprintf('Child Template "%s" not found', $templateName));
+        }
+        unset($this->children[$templateName]);
+        return $this;
+    }
+
+
+    #endregion:
+    #region - Placeholders related methods:
+
+
+    /** @inheritDoc */
+    public function getPlaceholders(): array
+    {
+        $parentPlaceholders = [];
+        if ($this->hasParent()) {
+            $parentPlaceholders = $this->getParent()->getPlaceholders();
+        }
+        return array_merge($parentPlaceholders, $this->placeholders);
+    }
+
+    /** @inheritDoc */
     public function get(string $key, mixed $default=null): mixed
     {
         if (!$this->has($key)) {
-            if(null === $default) {
-                return 'NO VALUE FOR  "' .$key . '"';
-            } else {
-                return $default;
-            }
+            if ($this->hasParent()) return $this->getParent()->get($key, $default);
+            if (null === $default) return '<span class="volta template-undefined">' .$key . '</span>';
+            return $default;
         }
         return $this->placeholders[$key];
     }
 
-    /**
-     * @param string $key
-     * @param mixed $value
-     * @return $this
-     */
+    /** @inheritDoc */
     public function set(string $key, mixed $value): self
     {
         $this->placeholders[$key] = $value;
         return $this;
     }
 
-    /**
-     * @param string $key
-     * @return bool
-     */
+    /** @inheritDoc */
     public function has(string $key): bool
     {
         return isset($this->placeholders[$key]);
     }
 
-    #endregion
+    /** @inheritDoc */
+    public function unset(string $key): self
+    {
+        if ($this->has($key)) unset($this->placeholders[$key]);
+        return $this;
+    }
 
+
+    #endregion
     #region - Render related methods:
 
-    /**
-     * Creates a new template and returns rendered content
-     *
-     * @see Template::__invoke();
-     * @see Template::getContent();
-     *
-     * @param string $file The file containing the PHP and HTML
-     * @param array<string, mixed> $placeholders Associative array with values to be replaced
-     * @return string The rendered HTML
-     * @throws TemplatesException
-     * @throws NotFoundException
-     */
-    public static function render(string $file, array $placeholders = []): string
+
+    /** @inheritDoc */
+    public function include(string $file, array $placeholders = []) : void
     {
-        $template = new static($file);
-        return $template($placeholders);
+        try{
+            $template= new Template($file, $placeholders);
+            echo $template;
+        } catch(\Throwable $exception) {
+            echo sprintf(PHP_EOL . '<div class="volta template-error">Template::include() failed: %s</div>' . PHP_EOL,  $exception->getMessage());
+        }
+    }
+
+    /** @inheritDoc */
+    public function includeChild(string $templateName, array $placeholders = []): void
+    {
+        try {
+            $child = $this->getChild($templateName);
+            echo $child->getContent($placeholders);
+        } catch(\Throwable $exception) {
+            echo sprintf(PHP_EOL . '<div class="volta template-error">Template::includeChild() failed: %s</div>' . PHP_EOL,  $exception->getMessage());
+        }
     }
 
     /**
-     * NOTE: The passed placeholders will be merged with the ones passed at construction and overwrites
-     * existing placeholders
-     *
+     * @inheritDoc
+     */
+    public function getContent(array $placeholders = []): string
+    {
+        set_error_handler(
+            function(int $code, string $message, string $file, int $line) {
+                if (error_reporting() > 0 ) {
+                    echo sprintf('<div class="volta template-error">Error(%d) in template(%s): "%s" on line %d</div>', $code, $this->getName(), $message, $line);
+                }
+                return false;
+            }
+        );
+
+        $render = function($definedVariables) {
+            ob_start();
+            extract($definedVariables, EXTR_PREFIX_INVALID, '_');
+            if ($this->getVerbose())  echo sprintf(PHP_EOL . '<!-- START: %s[%s] -->' . PHP_EOL,  basename($this->getFile()), $this->getName());
+            include $this->getFile();
+            if ($this->getVerbose()) echo sprintf(PHP_EOL . '<!-- END: %s[%s] -->' . PHP_EOL,  basename($this->getFile()), $this->getName());
+            return PHP_EOL . ob_get_clean() . PHP_EOL;
+        };
+
+        $placeholdersOrg = $this->placeholders;
+        $this->placeholders = array_merge($this->placeholders, $placeholders);
+
+        $toBeExtracted = [];
+        foreach($this->getPlaceholders() as $key => $value) {
+            $toBeExtracted[preg_replace('/[^0-1a-zA-Z_]/', '_', $key)] = $value;
+        }
+
+        //$render = $render->bindTo($this);
+        $html  = $render($toBeExtracted);
+        restore_error_handler();
+        $this->placeholders = $placeholdersOrg;
+        return $html;
+
+    }
+
+    /**
      * @see Template::getContent();
-     *
-     * @param array<string, mixed> $placeholders Associative array with values to be replaced.
-     * @return string
-     * @throws TemplatesException
      */
     public function __invoke(array $placeholders = []): string
     {
@@ -288,95 +289,17 @@ class Template implements TemplateInterface, ArrayAccess
     }
 
     /**
-     * @var array<string, mixed>
-     */
-    protected array $placeholdersOrg = [];
-
-    /**
-     * Renders the template, substitutes the __$placeholders__ and returns the result
-     *
-     * NOTE: The passed placeholders will be merged with the ones passed at construction and overwrites
-     * existing placeholders. If we have a parent placeholders will also be extracted but overwritten by
-     * the current placeholders list
-     *
-     * @param array<string, mixed> $placeholders
-     * @return string
-     * @throws Exception
-     */
-    public function getContent(array $placeholders = []): string
-    {
-        // start with an empty array of placeholders
-        $currentPlaceholders = [];
-
-        // if we have a parent set the parent placeholders as a starting point
-        if ($this->getParent()) {
-            $currentPlaceholders = array_merge($currentPlaceholders, $this->getParent()->getPlaceholders());
-        }
-
-        // override / merge with current placeholders already set
-        $currentPlaceholders = array_merge($currentPlaceholders, $this->placeholders);
-
-        // override / merge placeholders with passed placeholders
-        $currentPlaceholders = array_merge($currentPlaceholders, $placeholders);
-
-//        $currentPlaceholders = array_merge(
-//            !is_null($this->getParent()) ? $this->getParent()->getPlaceholders() : [],
-//            $this->placeholders,
-//            $placeholders
-//        );
-
-        // save original placeholders this way we can render the template multiple times with different values
-        // keeping the original values intact and still use the get() method in the templates.
-        $this->placeholdersOrg = $this->placeholders;
-        $this->placeholders = $currentPlaceholders;
-
-        // temporary get all errors to give some meaningfully template related feedback
-        set_error_handler(
-            function(int $code, string $message, string $file, int $line)
-            {
-                if (error_reporting() > 0 ) {
-                    throw new TemplatesException(
-                        sprintf('Error %d in template(%s): "%s" on line %d', $code, $this->getFile(), $message, $line )
-                    );
-                } else {
-                    return false;
-                }
-            }
-        );
-
-        $html = '';
-        ob_start();
-        extract($currentPlaceholders);
-        if ($this->getVerbose()) $html .= PHP_EOL . '<!-- START: "' . basename($this->getFile()) . '" -->' . PHP_EOL;
-        include $this->getFile();
-        $html .= ob_get_contents() . PHP_EOL;
-        if ($this->getVerbose()) $html .= PHP_EOL . '<!-- END: "' . basename($this->getFile()) . '" -->' . PHP_EOL;
-        ob_end_clean();
-
-        restore_error_handler();
-        $this->placeholders = $this->placeholdersOrg;
-
-        return $html;
-
-    }
-
-    private function getContentPlaceholders(): void
-    {
-
-    }
-
-    /**
-     * @return string
-     * @throws TemplatesException
+     * @see Template::getContent();
      */
     public function __toString(): string
     {
-        return $this->getContent( );
+        return $this->getContent();
     }
 
-    #endregion
 
+    #endregion
     #region - ArrayAccess stubs:
+
 
     /**
      * @inheritdoc
@@ -408,14 +331,13 @@ class Template implements TemplateInterface, ArrayAccess
     /**
      * @inheritdoc
      * @see https://www.php.net/manual/en/arrayaccess.offsetUnset.php
-     * @throws TemplatesException
      */
     public function offsetUnset(mixed $offset): void
     {
-        throw new TemplatesException('Changing the placeholders through array access not allowed');
+        $this->unset($offset);
     }
 
-    #endregion
 
+    #endregion
 
 }

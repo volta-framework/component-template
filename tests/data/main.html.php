@@ -1,14 +1,11 @@
-<?php
+<?php declare(strict_types=1);
+
+use Volta\Component\Templates\Template;
 use Volta\Component\Templates\TemplateInterface;
-/**
- * @var TemplateInterface $this
- */
+/** @var TemplateInterface $this */
 ?>
-<html lang="en">
-<head>
-    <title><?= $this->get('title', 'layouts default'); ?></title>
-</head>
-<body>
-    <?php $this->getSubTemplate('content'); ?>
-</body>
-</html>
+    <main>
+        <h2><?= $title ?? '...'; ?></h2>
+        <?php $this->include('partial.html.php', ['title' => 'MAIN ARTICLE']); ?>
+        <?php $this->includeChild('partial', ['title' => 'MAIN ARTICLE']); ?>
+    </main>

@@ -13,7 +13,7 @@ namespace Volta\Component\Templates;
 
 use Volta\Component\Templates\NotFoundException as NotFoundException;
 
-class Settings
+abstract class Settings
 {
 
     /**

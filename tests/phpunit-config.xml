@@ -5,7 +5,7 @@
         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/6.3/phpunit.xsd"
         backupGlobals="true"
         backupStaticAttributes="false"
-        bootstrap="../bootstrap.php"
+        bootstrap="./bootstrap.php"
         colors="true"
         convertErrorsToExceptions="true"
         convertNoticesToExceptions="true"
@@ -25,7 +25,7 @@
 
     <testsuites>
         <testsuite name="General tests">
-            <directory>../libraries</directory>
+            <file>TemplatesTest.php</file>
         </testsuite>
     </testsuites>
 

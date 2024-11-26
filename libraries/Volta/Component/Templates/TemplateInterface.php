@@ -27,69 +27,112 @@ interface TemplateInterface
      */
     public function __construct(string $file, array $placeholders = []);
 
-
-    #endregion
-
-    #region - Files related methods:
-
-
     /**
      * @return string The file containing the PHP and HTML
      */
     public function getFile(): string;
 
+    /**
+     * @return string
+     */
+    public function getName(): string;
+
+    /**
+     * @return bool
+     */
+    public function getVerbose(): bool;
+
+    /**
+     * @param bool $verbose
+     * @return self
+     */
+    public function setVerbose(bool $verbose): self;
+
 
     #endregion
-
     #region - Nested Templates:
 
 
     /**
      * @see Template::addSubTemplate()
-     * @return Template|null Reference to parent template
+     * @return TemplateInterface|null Reference to parent template
      */
-    public function getParent(): ?Template;
+    public function getParent(): TemplateInterface|null;
+
+    /**
+     * @return bool
+     */
+    public function hasParent(): bool;
+
+    /**
+     * @return bool
+     */
+    public function isRoot(): bool;
 
     /**
      * @see Template::addSubTemplate()
      * @return Template[] A collection with references to its sub(child) templates
      */
-    public function getSubTemplates(): array;
+    public function getChildren(): array;
 
     /**
-     * @param string $file The file containing the PHP and HTML
-     * @param array<string, mixed> $placeholders The collection of name - value pairs to be replaced in the template
-     * @param string $index A (unique within the parent) name for this template
-     * @return Template Reference to the current template instance, not the added sub template
+     * @param string $templateName A (unique within the parent) name for this template
+     * @param TemplateInterface $template
+     * @return TemplateInterface Reference to the current template instance, not the added sub template
      * @throws NotFoundException When the file can not be found
+     * @throws TemplatesException When the templateName is already in use
      */
-    public function addSubTemplate(string $index, string $file, array $placeholders = [] ): self;
+    public function addChild(string $templateName, TemplateInterface $template): self;
 
     /**
-     * @param string $index A (unique within the parent) name for this template
-     * @return Template Reference to the sub template instance
-     * @throws NotFoundException When the sub tem[plate can not be found
+     * @param string $templateName A (unique within the parent) name for this template
+     * @param string $file The file containing the PHP and HTML
+     * @param array<string, mixed> $placeholders The collection of name - value pairs to be replaced in the template     *
+     * @return TemplateInterface Reference to the current template instance, not the added sub template
+     * @throws NotFoundException When the file can not be found
+     * @throws TemplatesException When the templateName is already in use
      */
-    public function getSubTemplate(string $index): Template;
+    public function addChildByFile(string $templateName, string $file, array $placeholders=[]): self;
 
     /**
-     * @param string $index A (unique within the parent) name for this template
+     * @param string $templateName A (unique within the parent) name for this template
+     * @return TemplateInterface Reference to the sub template instance
+     * @throws NotFoundException When the child template can not be found
+     */
+    public function getChild(string $templateName): TemplateInterface;
+
+    /**
+     * @param string $templateName A (unique within the parent) name for this template
      * @return bool TRUE when exists, FALSE otherwise
      */
-    public function hasSubTemplate(string $index): bool;
+    public function hasChild(string $templateName): bool;
 
     /**
-     * Includes a independent template
+     * @param string $templateName
+     * @return self
+     * @throws NotFoundException When the child template can not be found
+     */
+    public function removeChild(string $templateName): self;
+
+    /**
+     * Includes the content of an independent template into the buffer
      *
      * @param string $file The file containing the PHP and HTML
      * @param array<string, mixed> $placeholders The collection of name - value pairs to be replaced in the template
-     * @throws NotFoundException When the file can not be found
      */
     public function include(string $file, array $placeholders = []) : void;
 
+    /**
+     * Includes the content of a child template into the buffer
+     *
+     * @param string $templateName
+     * @param array $placeholders
+     * @return void
+     */
+    public function includeChild(string $templateName, array $placeholders = []): void;
+
 
     #endregion:
-
     #region - Placeholders related methods:
 
 
@@ -122,31 +165,22 @@ interface TemplateInterface
      */
     public function has(string $key): bool;
 
+    /**
+     * @param string $key
+     * @return self
+     */
+    public function unset(string $key): self;
+
 
     #endregion
-
     #region - Render related methods:
 
 
     /**
-     * Renders the __$file__, substitutes the __$placeholders__ and returns the result
+     * NOTE: The passed placeholders temporarily overwrite the ones passed at construction or the ones of the
+     * parent during the render process.
      *
-     * @see Template::getContent();
-     * @param string $file The file containing the PHP and HTML
-     * @param array<string, mixed> $placeholders The collection of name - value pairs to be replaced in the template
-     * @return string The rendered HTML
-     * @throws NotFoundException When the file can not be found
-     */
-    public static function render(string $file, array $placeholders = []): string;
-
-    /**
-     * Renders the template, substitutes the __$placeholders__ and returns the result
-     *
-     * NOTE: The passed placeholders will be merged with the ones passed at construction and overwrites
-     * existing placeholders. The parent placeholders, if any, will also be extracted but overwritten by
-     * the current placeholders list
-     *
-     * @param array<string, mixed> $placeholders The collection of name - value pairs to be replaced in the template
+     * @param array<string, mixed> $placeholders
      * @return string The rendered HTML
      */
     public function getContent(array $placeholders = []): string;
